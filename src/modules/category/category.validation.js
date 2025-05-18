@@ -9,7 +9,7 @@ const isValidObjectId = (value, helper) => {
 
 // Register
 export const createCategorySchema = Joi.object({
-  name: Joi.string().required().messages({
+  name: Joi.string().messages({
     "any.required": "name is required.",
   }),
   createdBy: Joi.string().custom(isValidObjectId),

@@ -24,7 +24,7 @@ export const appRouter = (app, express) => {
     const errorResponse = {
       success: false,
       message: error.message,
-      ...(process.env.ENV === "dev" && { stack: error.stack }),
+      ...(process.env.NODE_ENV === "dev" && { stack: error.stack }),
     };
     return res.status(error.statusCode || 500).json(errorResponse);
   });

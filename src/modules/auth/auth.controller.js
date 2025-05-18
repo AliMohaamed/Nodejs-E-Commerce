@@ -93,7 +93,7 @@ export const login = asyncHandler(async (req, res, next) => {
   // 7- change user status to online and save user in db
   user.status = "online";
   // 8- response
-  return res.status(200).json({ success: true, message: token });
+  return res.status(201).json({ success: true, message: token });
 });
 
 // Forgot Password
