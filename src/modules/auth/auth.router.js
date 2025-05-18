@@ -1,7 +1,21 @@
 import { Router } from "express";
 import { isValid } from "../../middleware/validation.middleware.js";
-import { activateAccountSchema, registerSchema } from "./auth.validation.js";
-import { register, confirmEmail } from "./auth.controller.js";
+import {
+  activateAccountSchema,
+  loginSchema,
+  registerSchema,
+  forgotPasswordSchema,
+  verifyOtpSchema,
+  resetPasswordSchema,
+} from "./auth.validation.js";
+import {
+  register,
+  activateMail,
+  login,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
+} from "./auth.controller.js";
 
 const router = Router();
 
@@ -12,11 +26,15 @@ router.post("/register", isValid(registerSchema), register);
 router.get(
   "/confirmEmail/:activationCode",
   isValid(activateAccountSchema),
-  confirmEmail
+  activateMail
 );
 
 // Login
+router.post("/login", isValid(loginSchema), login);
 
 // Reset Password
+router.post("/forgotPassword", isValid(forgotPasswordSchema), forgotPassword);
+router.post("/verifyOtp", isValid(verifyOtpSchema), verifyOtp);
+router.post("/resetPassword", isValid(resetPasswordSchema), resetPassword);
 
 export default router;

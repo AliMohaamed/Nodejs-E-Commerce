@@ -38,9 +38,9 @@ const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    forgetCode: String,
+    otp: String,
+    otpExpires: Date,
     activationCode: String,
-    activationCodeExpires: Date,
     profileImage: {
       secure_url: {
         type: String,
