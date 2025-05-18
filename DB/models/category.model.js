@@ -6,10 +6,12 @@ const categorySchema = new Schema(
     name: {
       type: String,
       required: true,
+      unique: true,
     },
     slug: {
       type: String,
       required: true,
+      unique: true,
     },
     image: {
       url: { type: String, required: true },
