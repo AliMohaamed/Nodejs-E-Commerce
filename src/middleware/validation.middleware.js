@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import ApiError from "../utils/error/ApiError.js";
 
 export const isValid = (schema) => {
@@ -12,4 +13,10 @@ export const isValid = (schema) => {
     }
     return next();
   };
+};
+
+export const isValidObjectId = (value, helper) => {
+  return Types.ObjectId.isValid(value)
+    ? true
+    : helper.message("Invalid Object ID");
 };

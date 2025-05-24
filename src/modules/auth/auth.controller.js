@@ -36,7 +36,6 @@ export const register = asyncHandler(async (req, res, next) => {
     subject: "Activate Account",
     html: signUpTemp(link),
   });
-  console.log(isSent);
   // Send Response
   return isSent
     ? res.json({ success: true, message: user })
@@ -53,7 +52,7 @@ export const activateMail = asyncHandler(async (req, res, next) => {
     { new: true }
   );
   if (!user) return next(new ApiError(404, "User not found"));
-  // create cart
+  // TODO: create cart
   // can add link from frontend
   return res
     .status(200)
@@ -93,7 +92,9 @@ export const login = asyncHandler(async (req, res, next) => {
   // 7- change user status to online and save user in db
   user.status = "online";
   // 8- response
-  return res.status(201).json({ success: true, message: token });
+  return res
+    .status(201)
+    .json({ success: true, message: "Logged in successfully", token });
 });
 
 // Forgot Password

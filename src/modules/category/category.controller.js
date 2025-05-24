@@ -5,7 +5,17 @@ import cloudinary from "../../utils/cloud.js";
 import ApiError from "../../utils/error/ApiError.js";
 import sendResponse from "../../utils/response.js";
 
+// Create a new category
 export const createCategory = asyncHandler(async (req, res, next) => {
+  const { name } = req.body;
+
+  // Check if name in DB
+  const existingCategory = await Category.findOne({ name });
+  if (existingCategory) {
+    return next(new ApiError(400, "Category already exists"));
+  }
+
+  // Check file upload
   if (!req.file) return next(new ApiError(400, "Category image is required"));
   const { secure_url, public_id } = await cloudinary.uploader.upload(
     req.file.path,
@@ -13,12 +23,16 @@ export const createCategory = asyncHandler(async (req, res, next) => {
       folder: `${process.env.FOLDER_CLOUD_NAME}/category`,
     }
   );
+
+  // Save category to DB
   const category = await Category.create({
-    name: req.body.name,
-    slug: slugify(req.body.name),
+    name: name,
+    slug: slugify(name.toLowerCase()),
     image: { url: secure_url, id: public_id },
     createdBy: req.user._id,
   });
+
+  // Send response
   return sendResponse(res, {
     statusCode: 201,
     message: "Created Category Successfully",
@@ -26,6 +40,7 @@ export const createCategory = asyncHandler(async (req, res, next) => {
   });
 });
 
+// Update a category
 export const updateCategory = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const { name, createdBy } = req.body;
@@ -67,6 +82,7 @@ export const updateCategory = asyncHandler(async (req, res, next) => {
   });
 });
 
+// Delete a category
 export const deleteCategory = asyncHandler(async (req, res, next) => {
   const category = await Category.findByIdAndDelete(req.params.id);
   if (!category) return next(new ApiError(404, "Invalid category id!"));
@@ -75,4 +91,12 @@ export const deleteCategory = asyncHandler(async (req, res, next) => {
   return sendResponse(res, {
     message: "Category deleted successfully",
   });
+});
+
+// Get all categories
+export const allCategories = asyncHandler(async (req, res, next) => {
+  const categories = await Category.find();
+  if (!categories) return next(new ApiError(404, "No categories found"));
+
+  return res.status(200).json({ success: true, data: categories });
 });

@@ -4,7 +4,7 @@ import categoryRouter from "./modules/category/category.router.js";
 
 export const appRouter = (app, express) => {
   // Global Middleware
-  app.use(express.json());
+  app.use(express.json()); // Parse JSON bodies (Parse "req.body" as JSON )
 
   //Routes
 

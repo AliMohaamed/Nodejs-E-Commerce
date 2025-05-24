@@ -11,23 +11,32 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  allCategories,
 } from "./category.controller.js";
+import subcategoryRouter from "../subcategory/subcategory.router.js";
 
 const router = Router();
+
+// Subcategory router
+router.use("/:categoryId/subcategory", subcategoryRouter);
+
 // create category
 router.post(
   "/",
   isAuthentication,
   isAuthorization("admin"),
-  isValid(createCategorySchema),
   fileUpload(filterObject.image).single("category"),
+  isValid(createCategorySchema),
   createCategory
 );
-
+// Update and delete
 router
   .route("/:id")
   .all(isAuthentication, isAuthorization("admin"), isValid(categoryIdSchema))
   .put(fileUpload(filterObject.image).single("category"), updateCategory)
   .delete(deleteCategory);
+
+// get categories
+router.get("/", allCategories);
 
 export default router;

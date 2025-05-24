@@ -1,18 +1,17 @@
 import Joi from "joi";
-import { Types } from "mongoose";
 
-const isValidObjectId = (value, helper) => {
-  return Types.ObjectId.isValid(value)
-    ? true
-    : helper.message("Invalid Object ID");
-};
+import { isValidObjectId } from "../../middleware/validation.middleware.js";
+
+
 
 // Register
 export const createCategorySchema = Joi.object({
   name: Joi.string().messages({
     "any.required": "name is required.",
   }),
-  createdBy: Joi.string().custom(isValidObjectId),
+  createdBy: Joi.string().custom(isValidObjectId).messages({
+    "any.required": "createdBy is required.",
+  }),
 }).required();
 
 export const updateCategorySchema = Joi.object({

@@ -6,11 +6,12 @@ import jwt from "jsonwebtoken";
 
 export const isAuthentication = asyncHandler(async (req, res, next) => {
   // check token
-  let token = req.headers["token"];
+  let token = req.headers.authorization;
   if (!token || !token.startsWith(process.env.BEARERKEY))
     return next(new ApiError("400", "Valid token is required"));
   // check payload
-  token = token.split(process.env.BEARERKEY)[1];
+  // token = token.split(process.env.BEARERKEY)[1];
+  token = token.split(" ")[1];
   const decoded = jwt.verify(token, process.env.TOKEN_KEY);
   if (!decoded) return next(new ApiError(400, "Invalid Token"));
   // check token in db
