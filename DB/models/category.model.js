@@ -25,8 +25,22 @@ const categorySchema = new Schema(
   },
   {
     timestamps: true,
+    toJSON: {
+      virtuals: true, // Include virtuals in the JSON output
+    },
+    toObject: {
+      virtuals: true, // Include virtuals in the Object output
+    },
   }
 );
+
+// Virtual population for subcategories
+categorySchema.virtual("subcategory", {
+  ref: "Subcategory",
+  localField: "_id", //
+  foreignField: "category", // This is the field in the Subcategory model that references the Category
+});
+
 // model
 export const Category =
   mongoose.models.Category || model("Category", categorySchema);

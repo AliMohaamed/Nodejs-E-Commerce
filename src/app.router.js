@@ -1,6 +1,7 @@
 import ApiError from "./utils/error/ApiError.js";
 import authRouter from "./modules/auth/auth.router.js";
 import categoryRouter from "./modules/category/category.router.js";
+import subcategoryRouter from "./modules/subcategory/subcategory.router.js";
 
 export const appRouter = (app, express) => {
   // Global Middleware
@@ -13,6 +14,9 @@ export const appRouter = (app, express) => {
 
   // Category
   app.use("/category", categoryRouter);
+
+  // Subcategory
+  app.use("/subcategory", subcategoryRouter);
 
   // not found page router
   app.all("*", (req, res, next) => {

@@ -17,10 +17,10 @@ import subcategoryRouter from "../subcategory/subcategory.router.js";
 
 const router = Router();
 
-// Subcategory router
+//  Mount subcategory routes under /category/:categoryId/subcategory
 router.use("/:categoryId/subcategory", subcategoryRouter);
 
-// create category
+// Create
 router.post(
   "/",
   isAuthentication,
@@ -31,12 +31,12 @@ router.post(
 );
 // Update and delete
 router
-  .route("/:id")
+  .route("/:categoryId")
   .all(isAuthentication, isAuthorization("admin"), isValid(categoryIdSchema))
   .put(fileUpload(filterObject.image).single("category"), updateCategory)
   .delete(deleteCategory);
 
-// get categories
+// Get All
 router.get("/", allCategories);
 
 export default router;

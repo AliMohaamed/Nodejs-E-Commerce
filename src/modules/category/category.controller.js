@@ -42,11 +42,11 @@ export const createCategory = asyncHandler(async (req, res, next) => {
 
 // Update a category
 export const updateCategory = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
+  const { categoryId } = req.params;
   const { name, createdBy } = req.body;
 
   // 1. Check if category exists
-  const category = await Category.findById(id);
+  const category = await Category.findById(categoryId);
   if (!category) return next(new ApiError(404, "Category not found"));
 
   // 2. Prepare updated fields
@@ -84,7 +84,7 @@ export const updateCategory = asyncHandler(async (req, res, next) => {
 
 // Delete a category
 export const deleteCategory = asyncHandler(async (req, res, next) => {
-  const category = await Category.findByIdAndDelete(req.params.id);
+  const category = await Category.findByIdAndDelete(req.params.categoryId);
   if (!category) return next(new ApiError(404, "Invalid category id!"));
   // Delete Cloudinary
   await cloudinary.uploader.destroy(category.image.id);
@@ -95,7 +95,11 @@ export const deleteCategory = asyncHandler(async (req, res, next) => {
 
 // Get all categories
 export const allCategories = asyncHandler(async (req, res, next) => {
-  const categories = await Category.find();
+  const categories = await Category.find().populate({
+    path: "subcategory",
+    select: "name slug image",
+    populate: [{ path: "createdBy", select: "name -_id" }],
+  });
   if (!categories) return next(new ApiError(404, "No categories found"));
 
   return res.status(200).json({ success: true, data: categories });

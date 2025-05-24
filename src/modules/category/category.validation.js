@@ -2,8 +2,6 @@ import Joi from "joi";
 
 import { isValidObjectId } from "../../middleware/validation.middleware.js";
 
-
-
 // Register
 export const createCategorySchema = Joi.object({
   name: Joi.string().messages({
@@ -25,5 +23,5 @@ export const updateCategorySchema = Joi.object({
 }).required();
 
 export const categoryIdSchema = Joi.object({
-  id: Joi.string().custom(isValidObjectId).required(),
+  categoryId: Joi.string().custom(isValidObjectId).required(),
 });
