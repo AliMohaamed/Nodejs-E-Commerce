@@ -22,6 +22,11 @@ const categorySchema = new Schema(
       ref: "User",
       required: true,
     },
+    brand: {
+      type: Types.ObjectId,
+      ref: "Brand",
+      required: true,
+    },
   },
   {
     timestamps: true,

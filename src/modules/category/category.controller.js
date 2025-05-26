@@ -4,6 +4,7 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import cloudinary from "../../utils/cloud.js";
 import ApiError from "../../utils/error/ApiError.js";
 import sendResponse from "../../utils/response.js";
+import { Subcategory } from "../../../DB/models/subcategory.model.js";
 
 // Create a new category
 export const createCategory = asyncHandler(async (req, res, next) => {
@@ -84,12 +85,47 @@ export const updateCategory = asyncHandler(async (req, res, next) => {
 
 // Delete a category
 export const deleteCategory = asyncHandler(async (req, res, next) => {
-  const category = await Category.findByIdAndDelete(req.params.categoryId);
+  const category = await Category.findById(req.params.categoryId);
   if (!category) return next(new ApiError(404, "Invalid category id!"));
-  // Delete Cloudinary
-  await cloudinary.uploader.destroy(category.image.id);
+
+  // Check owner
+  if (category.createdBy.toString() !== req.user._id.toString()) {
+    return next(
+      new ApiError(403, "You are not authorized to delete this category")
+    );
+  }
+
+  // Get all subcategories for this category
+  const subcategories = await Subcategory.find({ category: category._id });
+
+  // Delete all subcategories' images from Cloudinary
+  // for (const subcategory of subcategories) {
+  //   if (subcategory.image?.id) {
+  //     await cloudinary.uploader.destroy(subcategory.image.id);
+  //   }
+  // }
+
+  await Promise.all(
+    subcategories.map(async (subcategory) => {
+      if (subcategory.image?.id) {
+        await cloudinary.uploader.destroy(subcategory.image.id);
+      }
+    })
+  );
+
+  // Delete all subcategories from DB
+  await Subcategory.deleteMany({ category: category._id });
+
+  // Delete category image from Cloudinary
+  if (category.image?.id) {
+    await cloudinary.uploader.destroy(category.image.id);
+  }
+
+  // Delete the category itself
+  await Category.deleteOne({ _id: req.params.categoryId });
+
   return sendResponse(res, {
-    message: "Category deleted successfully",
+    message: "Category and all related subcategories deleted successfully",
   });
 });
 

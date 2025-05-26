@@ -2,7 +2,7 @@ import multer, { diskStorage } from "multer";
 import ApiError from "./error/ApiError.js";
 
 export const filterObject = {
-  image: ["image/png", "image/jpeg", "image/jpg"],
+  image: ["image/png", "image/jpeg", "image/jpg", "image/webp"],
   pdf: ["image/pdf"],
   video: ["image/mp4"],
 };

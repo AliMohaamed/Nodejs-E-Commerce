@@ -64,9 +64,19 @@ export const updateSubcategory = asyncHandler(async (req, res, next) => {
   }
 
   // Check if subcategory exists
-  const subcategory = await Subcategory.findById(req.params.subcategoryId);
+  const subcategory = await Subcategory.findOne({
+    _id: req.params.subcategoryId,
+    category: req.params.categoryId, // Ensure subcategory belongs to the category
+  });
   if (!subcategory) {
     return next(new ApiError(404, "Subcategory not found"));
+  }
+
+  // Check Owner
+  if (subcategory.createdBy.toString() !== req.user._id.toString()) {
+    return next(
+      new ApiError(403, "You are not authorized to update this subcategory")
+    );
   }
 
   subcategory.name = name ? name : subcategory.name;
@@ -94,23 +104,38 @@ export const updateSubcategory = asyncHandler(async (req, res, next) => {
 
 // Delete a subcategory
 export const deleteSubcategory = asyncHandler(async (req, res, next) => {
-  // Check if category exists
-  const existingCategory = await Category.findById(req.params.categoryId);
-  if (!existingCategory) {
+  const { categoryId, subcategoryId } = req.params;
+
+  // Optional: Check if category exists
+  const categoryExists = await Category.exists({ _id: categoryId });
+  if (!categoryExists) {
     return next(new ApiError(404, "Category not found"));
   }
 
-  // Check if subcategory exists
-  const subcategory = await Subcategory.findByIdAndDelete(
-    req.params.subcategoryId
-  );
+  // Fetch subcategory
+  const subcategory = await Subcategory.findOne({
+    _id: subcategoryId,
+    category: categoryId,
+  });
+
   if (!subcategory) {
     return next(new ApiError(404, "Subcategory not found"));
   }
-  // Destroy image from cloudinary after successful DB delete
+
+  // Check owner
+  if (subcategory.createdBy.toString() !== req.user._id.toString()) {
+    return next(
+      new ApiError(403, "You are not authorized to delete this subcategory")
+    );
+  }
+
+  // Delete image from cloudinary
   await cloudinary.uploader.destroy(subcategory.image.id);
 
-  // Send response
+  // Delete subcategory
+  await Subcategory.findByIdAndDelete(subcategoryId);
+
+  // Response
   return sendResponse(res, {
     statusCode: 200,
     message: "Subcategory deleted successfully",
@@ -147,7 +172,9 @@ export const getSubcategories = asyncHandler(async (req, res, next) => {
   }
 
   // No categoryId → get all
-  subcategories = await Subcategory.find();
+  subcategories = await Subcategory.find()
+    .populate("category")
+    .populate("createdBy");
   if (subcategories.length === 0) {
     return next(new ApiError(404, "No subcategories found"));
   }

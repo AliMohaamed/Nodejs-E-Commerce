@@ -1,6 +1,7 @@
 import ApiError from "./utils/error/ApiError.js";
 import authRouter from "./modules/auth/auth.router.js";
 import categoryRouter from "./modules/category/category.router.js";
+import brandRouter from "./modules/brand/brand.router.js";
 import subcategoryRouter from "./modules/subcategory/subcategory.router.js";
 
 export const appRouter = (app, express) => {
@@ -17,6 +18,9 @@ export const appRouter = (app, express) => {
 
   // Subcategory
   app.use("/subcategory", subcategoryRouter);
+
+  // Category
+  app.use("/brand", brandRouter);
 
   // not found page router
   app.all("*", (req, res, next) => {
