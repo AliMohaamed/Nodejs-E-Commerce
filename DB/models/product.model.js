@@ -40,6 +40,19 @@ const productSchema = new mongoose.Schema(
       required: true,
       min: 1,
     },
+    discount: {
+      // Percentage discount
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    soldItems: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    cloudFolder: { type: String, unique: true },
     brand: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Brand",
@@ -57,18 +70,6 @@ const productSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    },
-    discount: {
-      // Percentage discount
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 100,
-    },
-    soldItems: {
-      type: Number,
-      default: 0,
-      min: 0,
     },
     // ratings: [
     //   {
@@ -91,6 +92,16 @@ const productSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// virtual
+productSchema.virtual("finalPrice").get(function () {
+  // this >>> document >> product {}
+  if (this.price) {
+    return Number.parseFloat(
+      this.price - (this.price * this.discount || 0) / 100
+    ).toFixed(2);
+  }
+});
 
 export const Product =
   mongoose.models.Product || model("Product", productSchema);
