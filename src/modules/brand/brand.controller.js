@@ -105,7 +105,7 @@ export const deleteBrand = asyncHandler(async (req, res, next) => {
   });
 });
 
-// Get all categories
+// Get all brands
 export const allBrands = asyncHandler(async (req, res, next) => {
   console.log("Fetching all brands...");
   const brands = await Brand.find();
@@ -120,5 +120,4 @@ export const getBrandById = asyncHandler(async (req, res, next) => {
   if (!brand) return next(new ApiError(404, "Brand not found"));
 
   return res.status(200).json({ success: true, data: brand });
-}
-);
+});

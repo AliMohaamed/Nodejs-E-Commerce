@@ -92,3 +92,62 @@ export const allProduct = asyncHandler(async (req, res, next) => {
     .status(200)
     .json({ success: true, count: products.length, data: products });
 });
+
+// Single Product
+export const singleProduct = asyncHandler(async (req, res, next) => {
+  const product = await Product.findById(req.params.productId);
+  if (!product) return next(new ApiError(404, "Product not found"));
+  res.status(200).json({ success: true, data: product });
+});
+
+// Update Product
+export const updateProduct = asyncHandler(async (req, res, next) => {
+  const product = await Product.findById(req.params.productId);
+  if (!product) return next(new ApiError(404, "Product not found!"));
+  // Check owner
+  if (req.user._id.toString() !== product.createdBy.toString())
+    return next(new ApiError(403, "No Authorize"));
+
+  if (req.files && req.files.subImages) {
+    const idsToDelete = product.images.map((img) => img.id);
+    if (idsToDelete.length > 0) {
+      await cloudinary.api.delete_resources(idsToDelete);
+    }
+
+    product.images = [];
+
+    for (const file of req.files.subImages) {
+      const { secure_url, public_id } = await cloudinary.uploader.upload(
+        file.path,
+        {
+          folder: `${process.env.FOLDER_CLOUD_NAME}/products/${product.cloudFolder}`,
+        }
+      );
+      product.images.push({ id: public_id, url: secure_url });
+    }
+  }
+
+  if (req.files && req.files.thumbnail) {
+    await cloudinary.uploader.destroy(product.thumbnail.id);
+
+    const { secure_url, public_id } = await cloudinary.uploader.upload(
+      req.files.thumbnail[0].path,
+      {
+        folder: `${process.env.FOLDER_CLOUD_NAME}/products/${product.cloudFolder}`,
+      }
+    );
+
+    product.thumbnail = {
+      id: public_id,
+      url: secure_url,
+    };
+  }
+  // Update
+  await product.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Updated Product Successfully!",
+    data: product,
+  });
+});

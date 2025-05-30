@@ -5,12 +5,15 @@ import { isValid } from "../../middleware/validation.middleware.js";
 import {
   createProductSchema,
   deleteProductSchema,
+  updateProductSchema,
 } from "./product.validation.js";
 import { fileUpload, filterObject } from "../../utils/multer.js";
 import {
   allProduct,
   createProduct,
   deleteProduct,
+  singleProduct,
+  updateProduct,
 } from "./product.controller.js";
 
 const router = Router();
@@ -30,5 +33,15 @@ router.get("/", allProduct);
 router
   .route("/:productId")
   .all(isAuthentication, isAuthorization("admin"))
-  .delete(isValid(deleteProductSchema), deleteProduct);
+  .get(isValid(deleteProductSchema), singleProduct)
+  .delete(isValid(deleteProductSchema), deleteProduct)
+  .put(
+    fileUpload(filterObject.image).fields([
+      { name: "thumbnail", maxCount: 1 },
+      { name: "subImages", maxCount: 3 },
+    ]),
+    isValid(updateProductSchema),
+    updateProduct
+  );
+
 export default router;

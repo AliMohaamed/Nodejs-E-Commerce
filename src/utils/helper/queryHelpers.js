@@ -2,7 +2,7 @@
 function queryHelpers(schema) {
   schema.query.paginate = function (page) {
     page = !page || page < 1 || isNaN(page) ? 1 : page;
-    const limit = 2;
+    const limit = 10;
     const skip = (page - 1) * limit;
     return this.skip(skip).limit(limit);
   };
