@@ -79,6 +79,22 @@ export const deleteProduct = asyncHandler(async (req, res, next) => {
 
 // All Product
 export const allProduct = asyncHandler(async (req, res, next) => {
+  console.log(req.params.categoryId);
+  if (req.params.categoryId) {
+    const category = await Category.findById(req.params.categoryId);
+    if (!category) return next(new ApiError(404, "Category not found"));
+
+    const products = await Product.find({ category: category._id })
+      .paginate(req.query.page)
+      .lean();
+    console.log(products);
+    if (!products || products.length === 0)
+      return next(new ApiError(404, "no products for this category"));
+    res
+      .status(200)
+      .json({ success: true, count: products.length, data: products });
+  }
+
   const products = await Product.find({ ...req.query })
     .paginate(req.query.page)
     .customSelect(req.query.fields)

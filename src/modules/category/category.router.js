@@ -14,11 +14,13 @@ import {
   allCategories,
 } from "./category.controller.js";
 import subcategoryRouter from "../subcategory/subcategory.router.js";
+import productRouter from "../product/product.router.js";
 
 const router = Router();
 
 //  Mount subcategory routes under /category/:categoryId/subcategory
 router.use("/:categoryId/subcategory", subcategoryRouter);
+router.use("/:categoryId/products", productRouter);
 
 // Create
 router.post(

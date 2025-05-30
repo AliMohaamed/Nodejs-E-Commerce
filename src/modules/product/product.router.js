@@ -16,7 +16,7 @@ import {
   updateProduct,
 } from "./product.controller.js";
 
-const router = Router();
+const router = Router({ mergeParams: true });
 
 router.post(
   "/",
@@ -29,6 +29,7 @@ router.post(
   isValid(createProductSchema),
   createProduct
 );
+// by category or all products
 router.get("/", allProduct);
 router
   .route("/:productId")
