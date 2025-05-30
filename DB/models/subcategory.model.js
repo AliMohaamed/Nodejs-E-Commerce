@@ -32,12 +32,13 @@ const subcategorySchema = new Schema(
       ref: "Category",
       required: true,
     },
-    brand:[
+    brand: [
       {
         type: Schema.Types.ObjectId,
         ref: "Brand",
+        required: true,
       },
-    ]
+    ],
   },
   {
     timestamps: true,

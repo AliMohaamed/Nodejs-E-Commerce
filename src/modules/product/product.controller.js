@@ -3,9 +3,23 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import cloudinary from "../../utils/cloud.js";
 import ApiError from "../../utils/error/ApiError.js";
 import { Product } from "../../../DB/models/product.model.js";
+import { Subcategory } from "../../../DB/models/subcategory.model.js";
+import { Category } from "../../../DB/models/category.model.js";
+import { Brand } from "../../../DB/models/brand.model.js";
 
 // Create Product
 export const createProduct = asyncHandler(async (req, res, next) => {
+  // check category
+  const category = await Category.findById(req.body.category);
+  if (!category) return next(new ApiError(404, "Category not found"));
+
+  // check subcategory
+  const subcategory = await Subcategory.findById(req.body.subcategory);
+  if (!subcategory) return next(new ApiError(404, "Subcategory not found"));
+
+  // check category
+  const brand = await Brand.findById(req.body.brand);
+  if (!brand) return next(new ApiError(404, "Brand not found"));
   // Check Files
   if (!req.files) return next(new ApiError(400, "Product Images Required"));
   // Create unique folder name
@@ -52,7 +66,6 @@ export const deleteProduct = asyncHandler(async (req, res, next) => {
   ids.push(product.thumbnail.id);
   // Delete Images
   await cloudinary.api.delete_resources(ids);
-  console.log(product.cloudFolder);
   // Delete Folder
   await cloudinary.api.delete_folder(
     `${process.env.FOLDER_CLOUD_NAME}/products/${product.cloudFolder}`
@@ -62,4 +75,20 @@ export const deleteProduct = asyncHandler(async (req, res, next) => {
   res
     .status(200)
     .json({ success: true, message: "Product deleted successfully!" });
+});
+
+// All Product
+export const allProduct = asyncHandler(async (req, res, next) => {
+  const products = await Product.find({ ...req.query })
+    .paginate(req.query.page)
+    .customSelect(req.query.fields)
+    .sort(req.query.sort)
+    .lean();
+
+  if (!products || products.length === 0)
+    return next(new ApiError(404, "No Products"));
+
+  res
+    .status(200)
+    .json({ success: true, count: products.length, data: products });
 });

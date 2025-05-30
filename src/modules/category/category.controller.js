@@ -5,6 +5,7 @@ import cloudinary from "../../utils/cloud.js";
 import ApiError from "../../utils/error/ApiError.js";
 import sendResponse from "../../utils/response.js";
 import { Subcategory } from "../../../DB/models/subcategory.model.js";
+import { Brand } from "../../../DB/models/brand.model.js";
 
 // Create a new category
 export const createCategory = asyncHandler(async (req, res, next) => {
@@ -15,6 +16,17 @@ export const createCategory = asyncHandler(async (req, res, next) => {
   if (existingCategory) {
     return next(new ApiError(400, "Category already exists"));
   }
+
+  // Check brand if exists
+  await Promise.all(
+    req.body.brand.map(async (brandId) => {
+      const brand = await Brand.findById(brandId);
+      if (!brand) {
+        return next(new ApiError(404, `Brand with id ${brandId} not found`));
+      }
+      return brand;
+    })
+  );
 
   // Check file upload
   if (!req.file) return next(new ApiError(400, "Category image is required"));
@@ -31,6 +43,7 @@ export const createCategory = asyncHandler(async (req, res, next) => {
     slug: slugify(name.toLowerCase()),
     image: { url: secure_url, id: public_id },
     createdBy: req.user._id,
+    brand: Array.isArray(req.body.brand) ? req.body.brand : [],
   });
 
   // Send response

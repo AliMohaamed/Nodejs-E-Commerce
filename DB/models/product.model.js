@@ -1,4 +1,5 @@
 import mongoose, { model } from "mongoose";
+import queryHelpers from "../../src/utils/helper/queryHelpers.js";
 
 const productSchema = new mongoose.Schema(
   {
@@ -90,6 +91,7 @@ const productSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    strictQuery: true, // Filtration
   }
 );
 
@@ -102,6 +104,8 @@ productSchema.virtual("finalPrice").get(function () {
     ).toFixed(2);
   }
 });
+
+productSchema.plugin(queryHelpers);
 
 export const Product =
   mongoose.models.Product || model("Product", productSchema);

@@ -7,7 +7,11 @@ import {
   deleteProductSchema,
 } from "./product.validation.js";
 import { fileUpload, filterObject } from "../../utils/multer.js";
-import { createProduct, deleteProduct } from "./product.controller.js";
+import {
+  allProduct,
+  createProduct,
+  deleteProduct,
+} from "./product.controller.js";
 
 const router = Router();
 
@@ -22,7 +26,7 @@ router.post(
   isValid(createProductSchema),
   createProduct
 );
-
+router.get("/", allProduct);
 router
   .route("/:productId")
   .all(isAuthentication, isAuthorization("admin"))

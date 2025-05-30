@@ -5,6 +5,7 @@ import ApiError from "../../utils/error/ApiError.js";
 import { Category } from "../../../DB/models/category.model.js";
 import { Subcategory } from "../../../DB/models/subcategory.model.js";
 import sendResponse from "../../utils/response.js";
+import { Brand } from "../../../DB/models/brand.model.js";
 
 // Create a new subcategory
 export const createSubcategory = asyncHandler(async (req, res, next) => {
@@ -44,6 +45,7 @@ export const createSubcategory = asyncHandler(async (req, res, next) => {
     image: { url: secure_url, id: public_id },
     category: categoryId,
     createdBy: req.user._id,
+    brand: req.body.brand,
   });
 
   // Send response
@@ -71,6 +73,17 @@ export const updateSubcategory = asyncHandler(async (req, res, next) => {
   if (!subcategory) {
     return next(new ApiError(404, "Subcategory not found"));
   }
+
+  // Check brand if exists
+  await Promise.all(
+    req.body.brand.map(async (brandId) => {
+      const brand = await Brand.findById(brandId);
+      if (!brand) {
+        return next(new ApiError(404, `Brand with id ${brandId} not found`));
+      }
+      return brand;
+    })
+  );
 
   // Check Owner
   if (subcategory.createdBy.toString() !== req.user._id.toString()) {

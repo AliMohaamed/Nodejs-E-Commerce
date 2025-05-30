@@ -4,6 +4,7 @@ import { isValidObjectId } from "../../middleware/validation.middleware.js";
 export const createSubcategorySchema = Joi.object({
   name: Joi.string().min(3).max(20).required(),
   categoryId: Joi.string().custom(isValidObjectId).required(),
+  brand: Joi.array().items(Joi.string().custom(isValidObjectId)).required(),
 }).required();
 
 // Update subcategory schema
@@ -11,6 +12,7 @@ export const updateSubcategorySchema = Joi.object({
   categoryId: Joi.string().custom(isValidObjectId).required(),
   subcategoryId: Joi.string().custom(isValidObjectId).required(),
   name: Joi.string().min(3).max(20),
+  brand: Joi.array().items(Joi.string().custom(isValidObjectId)),
 }).required();
 
 // Delete subcategory schema
