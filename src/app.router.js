@@ -4,6 +4,7 @@ import categoryRouter from "./modules/category/category.router.js";
 import brandRouter from "./modules/brand/brand.router.js";
 import productRouter from "./modules/product/product.router.js";
 import subcategoryRouter from "./modules/subcategory/subcategory.router.js";
+import couponRouter from "./modules/coupon/coupon.router.js";
 
 export const appRouter = (app, express) => {
   // Global Middleware
@@ -22,9 +23,12 @@ export const appRouter = (app, express) => {
 
   // Brand
   app.use("/brand", brandRouter);
-  
+
   // Product
   app.use("/product", productRouter);
+
+  // Product
+  app.use("/coupon", couponRouter);
 
   // not found page router
   app.all("*", (req, res, next) => {
