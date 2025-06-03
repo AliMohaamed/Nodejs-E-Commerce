@@ -92,6 +92,9 @@ const productSchema = new mongoose.Schema(
   {
     timestamps: true,
     strictQuery: true, // Filtration
+    toJSON: {
+      virtuals: true,
+    },
   }
 );
 

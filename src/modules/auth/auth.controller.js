@@ -10,6 +10,7 @@ import jwt from "jsonwebtoken";
 import { Token } from "../../../DB/models/token.model.js";
 import { generateExpiryDate } from "../../utils/generateExpiryDate.js";
 import randomstring from "randomstring";
+import { Cart } from "../../../DB/models/cart.model.js";
 // Register
 export const register = asyncHandler(async (req, res, next) => {
   // data from request
@@ -38,7 +39,7 @@ export const register = asyncHandler(async (req, res, next) => {
   });
   // Send Response
   return isSent
-    ? res.json({ success: true, message: user })
+    ? res.json({ success: true, message: "Check Your Email" })
     : next(new ApiError(400, "Something Wrong"));
 });
 
@@ -53,7 +54,7 @@ export const activateMail = asyncHandler(async (req, res, next) => {
   );
   if (!user) return next(new ApiError(404, "User not found"));
   // TODO: create cart
-  // can add link from frontend
+  await Cart.create({ user: user._id });
   return res
     .status(200)
     .json({ success: true, message: "Email confirmed successfully!" });
