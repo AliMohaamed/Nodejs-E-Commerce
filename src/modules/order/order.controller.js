@@ -6,6 +6,7 @@ import { Product } from "../../../DB/models/product.model.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import ApiError from "../../utils/error/ApiError.js";
 import path from "path";
+import fs from "fs/promises";
 import { createInvoice } from "../../utils/invoice.js";
 import cloudinary from "../../utils/cloud.js";
 import { sendEmail } from "../../utils/sendMail.js";
@@ -97,7 +98,9 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   const { public_id, secure_url } = await cloudinary.uploader.upload(pdfPath, {
     folder: `${process.env.FOLDER_CLOUD_NAME}/order/invoice/${user._id}`,
   });
+
   // TODO delete from file system
+  await fs.unlink(pdfPath);
   order.invoice = { id: public_id, url: secure_url };
   await order.save();
 
@@ -113,11 +116,32 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   });
 
   if (isSent) {
-     updateStock(order.products, true);
-     clearStock(user._id);
+    updateStock(order.products, true);
+    clearStock(user._id);
   }
   return res.status(201).json({
     success: true,
     data: "Order placed successfully, check your email",
+  });
+});
+
+export const cancelOrder = asyncHandler(async (req, res, next) => {
+  // check order
+  const { orderId } = req.params;
+
+  const order = await Order.findById(orderId);
+  if (!order) return next(ApiError(404, "Order not found!"));
+
+  if (order.status === "shipped" || order.status === "delivered")
+    return next(ApiError(400, `Order is ${order.status}, can not canceled`));
+
+  order.status = "canceled";
+  await order.save();
+
+  await updateStock(order.products, false);
+
+  res.status(200).json({
+    success: true,
+    message: "order canceled successfully!",
   });
 });
