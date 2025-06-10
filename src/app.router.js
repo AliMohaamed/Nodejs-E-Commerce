@@ -6,12 +6,16 @@ import productRouter from "./modules/product/product.router.js";
 import subcategoryRouter from "./modules/subcategory/subcategory.router.js";
 import couponRouter from "./modules/coupon/coupon.router.js";
 import cartRouter from "./modules/cart/cart.router.js";
+import orderRouter from "./modules/order/order.router.js";
+import morgan from "morgan";
 
 export const appRouter = (app, express) => {
   // Global Middleware
   app.use(express.json()); // Parse JSON bodies (Parse "req.body" as JSON )
 
-  //Routes
+  if (process.env.NODE_ENV === "dev") {
+    app.use(morgan("combined"));
+  }
 
   // Auth
   app.use("/auth", authRouter);
@@ -33,6 +37,9 @@ export const appRouter = (app, express) => {
 
   // Cart
   app.use("/cart", cartRouter);
+
+  // Cart
+  app.use("/order", orderRouter);
 
   // not found page router
   app.all("*", (req, res, next) => {

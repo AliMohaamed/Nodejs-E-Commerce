@@ -31,10 +31,11 @@ router.post(
 );
 // by category or all products
 router.get("/", allProduct);
+router.get("/:productId", isValid(deleteProductSchema), singleProduct);
 router
   .route("/:productId")
   .all(isAuthentication, isAuthorization("admin"))
-  .get(isValid(deleteProductSchema), singleProduct)
+
   .delete(isValid(deleteProductSchema), deleteProduct)
   .put(
     fileUpload(filterObject.image).fields([

@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-export const sendEmail = async ({ to, subject, html }) => {
+export const sendEmail = async ({ to, subject, html, attachments }) => {
   // sender
   const transporter = nodemailer.createTransport({
     host: "localhost",
@@ -18,6 +18,7 @@ export const sendEmail = async ({ to, subject, html }) => {
     to,
     subject,
     html,
+    attachments,
   });
   return emailInfo.accepted.length < 1 ? false : true;
 };

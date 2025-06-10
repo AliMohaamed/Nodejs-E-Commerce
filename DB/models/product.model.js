@@ -72,22 +72,6 @@ const productSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    // ratings: [
-    //   {
-    //     user: {
-    //       type: mongoose.Schema.Types.ObjectId,
-    //       ref: "User",
-    //       required: true,
-    //     },
-    //     rating: {
-    //       type: Number,
-    //       required: true,
-    //       min: 1,
-    //       max: 5,
-    //     },
-    //     comment: String,
-    //   },
-    // ],
   },
   {
     timestamps: true,
@@ -109,6 +93,10 @@ productSchema.virtual("finalPrice").get(function () {
 });
 
 productSchema.plugin(queryHelpers);
+
+productSchema.methods.inStock = function (requiredQuantity) {
+  return this.availableItems >= requiredQuantity;
+};
 
 export const Product =
   mongoose.models.Product || model("Product", productSchema);

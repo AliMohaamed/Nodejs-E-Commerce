@@ -87,7 +87,7 @@ export const allProduct = asyncHandler(async (req, res, next) => {
     const products = await Product.find({ category: category._id })
       .paginate(req.query.page)
       .lean();
-    console.log(products);
+
     if (!products || products.length === 0)
       return next(new ApiError(404, "no products for this category"));
     res

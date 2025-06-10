@@ -4,7 +4,7 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import ApiError from "../../utils/error/ApiError.js";
 import sendResponse from "../../utils/response.js";
 
-export const addCart = asyncHandler(async (req, res, next) => {
+export const addToCart = asyncHandler(async (req, res, next) => {
   const { quantity, productId } = req.body;
 
   const [product, cart] = await Promise.all([
@@ -13,7 +13,7 @@ export const addCart = asyncHandler(async (req, res, next) => {
   ]);
 
   if (!product) return next(new ApiError(404, "Product not found"));
-  if (quantity > product.availableItems)
+  if (!product.inStock(quantity))
     return next(new ApiError(400, `Only ${product.availableItems} in stock`));
 
   // check if product in cart or not
@@ -41,7 +41,7 @@ export const updateCart = asyncHandler(async (req, res, next) => {
   const product = await Product.findById(productId);
   if (!product) return next(new ApiError(404, "Product not found"));
 
-  if (quantity > product.availableItems)
+  if (!product.inStock(quantity))
     return next(new ApiError(400, `Only ${product.availableItems} in stock`));
 
   const cart = await Cart.findOneAndUpdate(
