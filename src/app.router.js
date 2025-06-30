@@ -17,15 +17,34 @@ export const appRouter = (app, express) => {
   }
 
   // CORS
-  const whitelist = ["localhost:3000", process.env.BACKEND_URL];
-  app.use((req,res,next)=>{
-    const origin = req.headers.origin || req.headers.host;
-    console.log(origin);
-    if(!whitelist.includes(origin)){
-      console.log("TEST");
+  const whitelist = [
+    "http://localhost:3000/",
+    "localhost:3000",
+    process.env.BACKEND_URL,
+    process.env.DOMAIN_URL,
+  ];
+  app.use((req, res, next) => {
+    // From Browser (Activate account api)
+    if (req.originalUrl.includes("/auth/confirmEmail")) {
+      res.setHeader("Access-Control-Allow-Headers", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET");
+      return next();
     }
-    return next()
-  })
+    const origin = req.headers.origin || req.headers.host;
+    if (!whitelist.includes(origin)) {
+      return next(new ApiError(403, "Blocked By CROS!"));
+    }
+    res.setHeader("Access-Control-Allow-Origin", "*");
+
+    // res.setHeader("Access-Control-Allow-Headers","*"); // what send in headers (here: all *)
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    );
+    res.setHeader("Access-Control-Allow-Methods", "*");
+    res.setHeader("Access-Control-Allow-Private-Network", true); // for local
+    return next();
+  });
 
   // ROUTES
   app.get("/", (req, res) => {
