@@ -1,24 +1,25 @@
 import { fileURLToPath } from "url";
+import path from "path";
+import fs from "fs/promises";
+import Stripe from "stripe";
 import { Cart } from "../../../DB/models/cart.model.js";
 import { Coupon } from "../../../DB/models/coupon.model.js";
 import { Order } from "../../../DB/models/order.model.js";
 import { Product } from "../../../DB/models/product.model.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import ApiError from "../../utils/error/ApiError.js";
-import path from "path";
-import fs from "fs/promises";
 import { createInvoice } from "../../utils/invoice.js";
 import cloudinary from "../../utils/cloud.js";
 import { sendEmail } from "../../utils/sendMail.js";
 import { clearStock, updateStock } from "./order.service.js";
-import Stripe from "stripe";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const createOrder = asyncHandler(async (req, res, next) => {
-  // data
   const { payment, coupon, address, phone } = req.body;
-  // Coupon
+
+  // Check coupon
   let checkCoupon;
   if (coupon) {
     checkCoupon = await Coupon.findOne({
@@ -28,37 +29,37 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     if (!checkCoupon) return next(new ApiError(404, "Invalid coupon"));
   }
 
-  // check cart
+  // Check cart
   const cart = await Cart.findOne({ user: req.user._id });
-  const products = cart.products;
+  const products = cart?.products || [];
   if (products.length < 1) return next(new ApiError(400, "Empty Cart!"));
 
   let orderProducts = [];
   let orderPrice = 0;
-  for (let i = 0; i < products.length; i++) {
-    // check product existence
-    const product = await Product.findById(products[i].productId);
-    if (!product)
-      return next(
-        new ApiError(404, `Product ${products[i].productId} not found!`)
-      );
-    // check stock
-    if (!product.inStock(products[i].quantity))
+
+  for (const item of products) {
+    const product = await Product.findById(item.productId);
+    if (!product) {
+      return next(new ApiError(404, `Product ${item.productId} not found!`));
+    }
+    if (!product.inStock(item.quantity)) {
       return next(
         new ApiError(
           400,
-          `${product.name} out of stock, only ${product.availableItems} items are left`
+          `${product.name} out of stock, only ${product.availableItems} left`
         )
       );
-    // Order product
+    }
+
     orderProducts.push({
       productId: product._id,
-      quantity: products[i].quantity,
+      quantity: item.quantity,
       name: product.name,
       itemPrice: product.finalPrice,
-      totalPrice: product.finalPrice * products[i].quantity,
+      totalPrice: product.finalPrice * item.quantity,
     });
-    orderPrice += product.finalPrice * products[i].quantity;
+
+    orderPrice += product.finalPrice * item.quantity;
   }
 
   // Create Order
@@ -75,8 +76,10 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     },
     payment,
   });
+
   const user = req.user;
-  // invoice
+
+  // Invoice info
   const invoice = {
     shipping: {
       name: user.name,
@@ -90,33 +93,32 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     invoice_nr: order._id,
   };
 
-  // Create invoice directory if not exists
-  const invoiceDir = path.join(__dirname, "./../../utils/invoiceTemp");
-  if (!fs.existsSync(invoiceDir)) {
-    fs.mkdirSync(invoiceDir, { recursive: true });
-  }
-  const pdfPath = path.join(
-    __dirname,
-    `./../../utils/invoiceTemp/${order._id}.pdf`
-  );
-  createInvoice(invoice, pdfPath);
-  // upload cloudinary
+  // Create invoice directory
+  const invoiceDir = path.join(__dirname, "../../utils/invoiceTemp");
+  await fs.mkdir(invoiceDir, { recursive: true });
+
+  // Generate invoice PDF
+  const pdfPath = path.join(invoiceDir, `${order._id}.pdf`);
+  await createInvoice(invoice, pdfPath);
+
+  // Upload to Cloudinary
   const { public_id, secure_url } = await cloudinary.uploader.upload(pdfPath, {
     folder: `${process.env.FOLDER_CLOUD_NAME}/order/invoice/${user._id}`,
   });
 
-  // TODO delete from file system
+  // Remove local PDF
   await fs.unlink(pdfPath);
+
+  // Save invoice link
   order.invoice = { id: public_id, url: secure_url };
   await order.save();
 
-  if (payment == "visa") {
-    // Stripe payment
+  // Stripe payment if visa
+  if (payment === "visa") {
     const stripe = new Stripe(process.env.STRIPE_KEY);
 
-    /// Coupon For Payment
     let existCoupon;
-    if (order.coupon.name !== undefined) {
+    if (order.coupon.name) {
       existCoupon = await stripe.coupons.create({
         percent_off: order.coupon.discount,
         duration: "once",
@@ -127,20 +129,15 @@ export const createOrder = asyncHandler(async (req, res, next) => {
       payment_method_types: ["card"],
       success_url: process.env.SUCCESS_URL,
       cancel_url: process.env.CANCEL_URL,
-      line_items: order.products.map((product) => {
-        return {
-          price_data: {
-            currency: "egp",
-            product_data: {
-              name: product.name,
-              // images: [product.productId.defaultImage.url]
-            },
-            unit_amount: product.itemPrice * 100,
-          },
-          quantity: product.quantity,
-        };
-      }),
-      discounts: [{ coupon: existCoupon.id }],
+      line_items: order.products.map((p) => ({
+        price_data: {
+          currency: "egp",
+          product_data: { name: p.name },
+          unit_amount: p.itemPrice * 100,
+        },
+        quantity: p.quantity,
+      })),
+      ...(existCoupon && { discounts: [{ coupon: existCoupon.id }] }),
     });
 
     return res.status(201).json({
@@ -149,9 +146,10 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     });
   }
 
+  // Send invoice by email
   const isSent = await sendEmail({
     to: user.email,
-    subject: "order invoice",
+    subject: "Order Invoice",
     attachments: [
       {
         path: secure_url,
