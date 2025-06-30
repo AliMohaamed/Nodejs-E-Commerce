@@ -12,10 +12,25 @@ import morgan from "morgan";
 export const appRouter = (app, express) => {
   // Global Middleware
   app.use(express.json()); // Parse JSON bodies (Parse "req.body" as JSON )
-
   if (process.env.NODE_ENV === "dev") {
     app.use(morgan("combined"));
   }
+
+  // CORS
+  const whitelist = ["localhost:3000", process.env.BACKEND_URL];
+  app.use((req,res,next)=>{
+    const origin = req.headers.origin || req.headers.host;
+    console.log(origin);
+    if(!whitelist.includes(origin)){
+      console.log("TEST");
+    }
+    return next()
+  })
+
+  // ROUTES
+  app.get("/", (req, res) => {
+    res.json({ success: true, message: "Welcome to E-Commerce App" });
+  });
 
   // Auth
   app.use("/auth", authRouter);

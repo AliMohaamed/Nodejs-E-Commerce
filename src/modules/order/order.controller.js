@@ -11,6 +11,7 @@ import { createInvoice } from "../../utils/invoice.js";
 import cloudinary from "../../utils/cloud.js";
 import { sendEmail } from "../../utils/sendMail.js";
 import { clearStock, updateStock } from "./order.service.js";
+import Stripe from "stripe";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -104,6 +105,45 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   order.invoice = { id: public_id, url: secure_url };
   await order.save();
 
+    if (payment == "visa") {
+    // Stripe payment
+    const stripe = new Stripe(process.env.STRIPE_KEY);
+
+    /// Coupon For Payment
+    let existCoupon;
+    if (order.coupon.name !== undefined) {
+      existCoupon = await stripe.coupons.create({
+        percent_off: order.coupon.discount,
+        duration: "once",
+      });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      success_url: process.env.SUCCESS_URL,
+      cancel_url: process.env.CANCEL_URL,
+      line_items: order.products.map((product) => {
+        return {
+          price_data: {
+            currency: "egp",
+            product_data: {
+              name: product.name,
+              // images: [product.productId.defaultImage.url]
+            },
+            unit_amount: product.itemPrice * 100,
+          },
+          quantity: product.quantity,
+        };
+      }),
+      discounts: [{ coupon: existCoupon.id }],
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: session.url,
+    });
+  }
+
   const isSent = await sendEmail({
     to: user.email,
     subject: "order invoice",
@@ -119,9 +159,12 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     updateStock(order.products, true);
     clearStock(user._id);
   }
+
+
+
   return res.status(201).json({
     success: true,
-    data: "Order placed successfully, check your email",
+    message: "Order placed successfully, check your email",
   });
 });
 
