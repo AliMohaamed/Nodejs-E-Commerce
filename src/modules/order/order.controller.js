@@ -90,6 +90,11 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     invoice_nr: order._id,
   };
 
+  // Create invoice directory if not exists
+  const invoiceDir = path.join(__dirname, "./../../utils/invoiceTemp");
+  if (!fs.existsSync(invoiceDir)) {
+    fs.mkdirSync(invoiceDir, { recursive: true });
+  }
   const pdfPath = path.join(
     __dirname,
     `./../../utils/invoiceTemp/${order._id}.pdf`
@@ -105,7 +110,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   order.invoice = { id: public_id, url: secure_url };
   await order.save();
 
-    if (payment == "visa") {
+  if (payment == "visa") {
     // Stripe payment
     const stripe = new Stripe(process.env.STRIPE_KEY);
 
@@ -159,8 +164,6 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     updateStock(order.products, true);
     clearStock(user._id);
   }
-
-
 
   return res.status(201).json({
     success: true,

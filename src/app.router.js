@@ -18,7 +18,7 @@ export const appRouter = (app, express) => {
 
   // CORS
   const whitelist = [
-    "http://localhost:3000/",
+    "http://localhost:3000",
     "localhost:3000",
     process.env.BACKEND_URL,
     process.env.DOMAIN_URL,
