@@ -127,6 +127,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
+      mode: "payment",
       success_url: process.env.SUCCESS_URL,
       cancel_url: process.env.CANCEL_URL,
       line_items: order.products.map((p) => ({
