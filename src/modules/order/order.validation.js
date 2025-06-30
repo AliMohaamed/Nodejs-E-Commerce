@@ -7,6 +7,7 @@ export const createOrderSchema = Joi.object({
   coupon: Joi.string().length(5),
   payment: Joi.string().valid("cash", "visa").required(),
 }).required();
+
 export const cancelOrderSchema = Joi.object({
   orderId: Joi.string().custom(isValidObjectId).required(),
 }).required();

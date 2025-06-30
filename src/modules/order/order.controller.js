@@ -15,7 +15,7 @@ import { clearStock, updateStock } from "./order.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
+const stripe = new Stripe(process.env.STRIPE_KEY);
 export const createOrder = asyncHandler(async (req, res, next) => {
   const { payment, coupon, address, phone } = req.body;
 
@@ -115,8 +115,6 @@ export const createOrder = asyncHandler(async (req, res, next) => {
 
   // Stripe payment if visa
   if (payment === "visa") {
-    const stripe = new Stripe(process.env.STRIPE_KEY);
-
     let existCoupon;
     if (order.coupon.name) {
       existCoupon = await stripe.coupons.create({
@@ -128,6 +126,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
+      metadata: { orderId: order._id.toString() },
       success_url: process.env.SUCCESS_URL,
       cancel_url: process.env.CANCEL_URL,
       line_items: order.products.map((p) => ({
@@ -159,7 +158,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     ],
   });
 
-  if (isSent) {
+  if (payment === "cash" && isSent) {
     updateStock(order.products, true);
     clearStock(user._id);
   }
@@ -189,4 +188,51 @@ export const cancelOrder = asyncHandler(async (req, res, next) => {
     success: true,
     message: "order canceled successfully!",
   });
+});
+
+// Webhook for payment
+export const orderWebhook = asyncHandler(async (req, res, next) => {
+  const sig = req.headers["stripe-signature"];
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.ENDPOINT_SECERET
+    );
+  } catch (err) {
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+      const orderId = event.data.object.metadata.orderId;
+  // Handle the event
+  if (event.type === "checkout.session.completed") {
+    // change order status to visa payed
+    const order = await Order.findOneAndUpdate(
+      { _id: orderId },
+      { status: "visa payed" },
+      { new: true }
+    );
+    if (order) {
+      updateStock(order.products, true);
+      clearStock(order.user);
+    }
+    res.status(200).json({ received: true });
+  }
+  // if (event.type === "checkout.session.async_payment_failed") {
+    // change order status to failed to pay
+  //   await Order.findOneAndUpdate(
+  //     { _id: orderId },
+  //     { status: "failed to pay" },
+  //     { new: true }
+  //   );
+  //   return res.status(200).json({ received: true });
+  // }
+
+  await Order.findOneAndUpdate(
+    { _id: orderId },
+    { status: "failed to pay" },
+    { new: true }
+  );
+  return;
 });

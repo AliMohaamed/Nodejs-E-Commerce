@@ -7,11 +7,19 @@ import subcategoryRouter from "./modules/subcategory/subcategory.router.js";
 import couponRouter from "./modules/coupon/coupon.router.js";
 import cartRouter from "./modules/cart/cart.router.js";
 import orderRouter from "./modules/order/order.router.js";
+import reviewRouter from "./modules/review/review.router.js";
 import morgan from "morgan";
 
 export const appRouter = (app, express) => {
-  // Global Middleware
-  app.use(express.json()); // Parse JSON bodies (Parse "req.body" as JSON )
+  // Middleware
+  // Skip JSON parsing for webhook routes that need raw body
+  app.use((req, res, next) => {
+    if (req.originalUrl.includes('/order/webhook')) {
+      return next();
+    }
+    return express.json()(req, res, next);
+  });
+
   if (process.env.NODE_ENV === "dev") {
     app.use(morgan("combined"));
   }
@@ -72,8 +80,11 @@ export const appRouter = (app, express) => {
   // Cart
   app.use("/cart", cartRouter);
 
-  // Cart
+  // Order
   app.use("/order", orderRouter);
+
+  // Review
+app.use("/review", reviewRouter); 
 
   // not found page router
   app.all("*", (req, res, next) => {
