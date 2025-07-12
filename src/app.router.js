@@ -12,6 +12,7 @@ import roleRouter from "./modules/role/role.router.js";
 import userRouter from "./modules/user/user.router.js";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
+import Log from "../DB/models/log.model.js";
 
 export const appRouter = (app, express) => {
   // Middleware
@@ -103,7 +104,19 @@ app.use("/review", reviewRouter);
   });
 
   // Global error handler
-  app.use((error, req, res, next) => {
+  app.use(async(error, req, res, next) => {
+    try{
+      await Log.create({
+      message: error.message,
+      stack: error.stack,
+      level: "error",
+      path: req.originalUrl,
+      method: req.method,
+      user: req.user ? req.user._id : null,
+    });
+    } catch (error) {
+      console.error("Error logging to database:", error);
+    }
     const errorResponse = {
       success: false,
       message: error.message,
