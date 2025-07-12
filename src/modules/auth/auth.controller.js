@@ -1,5 +1,5 @@
 import { User } from "../../../DB/models/user.model.js";
-import { api } from "../../constants.js";
+
 import ApiError from "../../utils/error/ApiError.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import bcryptjs from "bcryptjs";
@@ -18,19 +18,17 @@ export const register = asyncHandler(async (req, res, next) => {
   // Check user existence
   const isUser = await User.findOne({ email });
   if (isUser) return next(new ApiError(409, "Email already registered"));
-  // hash password
-  const hashPassword = bcryptjs.hashSync(password, Number(process.env.SALT));
   // generate activation code
   const activationCode = crypto.randomBytes(64).toString("hex");
   // Create USER
   const user = await User.create({
     name,
     email,
-    password: hashPassword,
+    password,
     activationCode,
   });
   // create confirmation Link
-  const link = `${api}/auth/confirmEmail/${activationCode}`;
+  const link = `${process.env.API}/auth/confirmEmail/${activationCode}`;
   // send mail
   const isSent = await sendEmail({
     to: user.email,

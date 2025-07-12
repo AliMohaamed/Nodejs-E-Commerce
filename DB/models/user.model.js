@@ -1,5 +1,5 @@
 import mongoose, { model, Schema } from "mongoose";
-
+import bcryptjs from "bcryptjs";
 // Schema
 const userSchema = new Schema(
   {
@@ -58,10 +58,26 @@ const userSchema = new Schema(
         public_id: { type: String, required: true },
       },
     ],
+    // Roles and Permissions
+    roles: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Role",
+      },
+    ],
   },
   {
     timestamps: true,
   }
 );
+
+userSchema.pre("save", function (next) {
+  // Hash password before saving
+  if (this.isModified("password")) {
+    this.password = bcryptjs.hashSync(this.password, Number(process.env.SALT));
+  }
+  next();
+});
+
 // Model
 export const User = mongoose.models.User || model("User", userSchema);
