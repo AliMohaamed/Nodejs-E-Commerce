@@ -6,6 +6,7 @@ import { assignRoleToUserValidation, getUserByIdValidation } from "./user.valida
 import {
   assignRoleToUser,
   getAllUsers,
+  getUserById,
   removeRoleFromUser,
 } from "./user.controller.js";
 
