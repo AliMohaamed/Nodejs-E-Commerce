@@ -15,6 +15,7 @@ import {
   forgotPassword,
   verifyOtp,
   resetPassword,
+  refreshToken,
 } from "./auth.controller.js";
 
 const router = Router();
@@ -31,6 +32,9 @@ router.get(
 
 // Login
 router.post("/login", isValid(loginSchema), login);
+
+// Refresh Token
+router.post("/refresh-token", refreshToken); 
 
 // Reset Password
 router.post("/forgotPassword", isValid(forgotPasswordSchema), forgotPassword);

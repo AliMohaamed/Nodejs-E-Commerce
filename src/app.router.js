@@ -11,6 +11,7 @@ import reviewRouter from "./modules/review/review.router.js";
 import roleRouter from "./modules/role/role.router.js";
 import userRouter from "./modules/user/user.router.js";
 import morgan from "morgan";
+import cookieParser from "cookie-parser";
 
 export const appRouter = (app, express) => {
   // Middleware
@@ -25,6 +26,8 @@ export const appRouter = (app, express) => {
   if (process.env.NODE_ENV === "dev") {
     app.use(morgan("combined"));
   }
+
+  app.use(cookieParser());
 
   // CORS
   const whitelist = [

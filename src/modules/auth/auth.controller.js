@@ -74,27 +74,67 @@ export const login = asyncHandler(async (req, res, next) => {
   const match = bcryptjs.compareSync(password, user.password);
   if (!match) return next(new ApiError(404, "Email Or Password is invalid"));
   // 5- create token
-  const token = jwt.sign(
+  const accessToken = jwt.sign(
     { id: user._id, email: user.email },
-    process.env.TOKEN_KEY,
+    process.env.ACCESS_TOKEN,
     {
-      expiresIn: "2d",
+      expiresIn: "15m",
+    }
+  );
+  const refreshToken = jwt.sign(
+    { id: user._id, email: user.email },
+    process.env.REFRESH_TOKEN,
+    {
+      expiresIn: "7d",
     }
   );
   // 6- save token in token model
   await Token.create({
-    token,
+    token: refreshToken,
     user: user._id,
     agent: req.headers["User-Agent"],
-    expireAt: generateExpiryDate(2, "days"),
+    expireAt: generateExpiryDate(7, "days"),
   });
   // 7- change user status to online and save user in db
   user.status = "online";
   // 8- response
   return res
     .status(201)
-    .json({ success: true, message: "Logged in successfully", token });
+    .cookie("refreshToken", refreshToken, {
+      httpOnly: true, // Prevents JavaScript access, protects against XSS attacks
+      secure: process.env.NODE_ENV === "production", // HTTPS only in production
+      sameSite: "strict", // Prevents CSRF attacks by blocking cross-site requests
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days expiry (matches token expiry)
+    })
+    .json({ success: true, message: "Logged in successfully", accessToken });
 });
+
+// Refresh Token
+export const refreshToken = asyncHandler(async (req, res, next) => {
+  // get refresh token from cookies
+  const token = req.cookies.refreshToken;
+  if (!token) return next(new ApiError(400, "Refresh token is required"));
+  // verify token
+  const decoded = jwt.verify(token, process.env.REFRESH_TOKEN);
+  if (!decoded) return next(new ApiError(400, "Invalid refresh token"));
+  // check token in db
+  const tokenDB = await Token.findOne({ token, isValid: true });
+  if (!tokenDB) return next(new ApiError(400, "Token expired"));
+  // create new access token
+  const accessToken = jwt.sign(
+    { id: decoded.id, email: decoded.email },
+    process.env.ACCESS_TOKEN,
+    {
+      expiresIn: "15m",
+    }
+  );
+  // response with new access token
+  return res.status(200).json({
+    success: true,
+    message: "Token refreshed successfully",
+    accessToken,
+  });
+})
 
 // Forgot Password
 export const forgotPassword = asyncHandler(async (req, res, next) => {
