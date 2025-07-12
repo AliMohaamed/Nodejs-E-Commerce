@@ -18,7 +18,7 @@ export const appRouter = (app, express) => {
   // Middleware
   // Skip JSON parsing for webhook routes that need raw body
   app.use((req, res, next) => {
-    if (req.originalUrl.includes('/order/webhook')) {
+    if (req.originalUrl.includes("/order/webhook")) {
       return next();
     }
     return express.json()(req, res, next);
@@ -96,7 +96,7 @@ export const appRouter = (app, express) => {
   app.use("/order", orderRouter);
 
   // Review
-app.use("/review", reviewRouter); 
+  app.use("/review", reviewRouter);
 
   // not found page router
   app.all("*", (req, res, next) => {
@@ -104,16 +104,16 @@ app.use("/review", reviewRouter);
   });
 
   // Global error handler
-  app.use(async(error, req, res, next) => {
-    try{
+  app.use(async (error, req, res, next) => {
+    try {
       await Log.create({
-      message: error.message,
-      stack: error.stack,
-      level: "error",
-      path: req.originalUrl,
-      method: req.method,
-      user: req.user ? req.user._id : null,
-    });
+        message: error.message,
+        stack: error.stack,
+        level: "error",
+        path: req.originalUrl,
+        method: req.method,
+        user: req.user ? req.user._id : null,
+      });
     } catch (error) {
       console.error("Error logging to database:", error);
     }
