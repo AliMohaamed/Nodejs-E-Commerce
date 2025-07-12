@@ -9,6 +9,7 @@ import cartRouter from "./modules/cart/cart.router.js";
 import orderRouter from "./modules/order/order.router.js";
 import reviewRouter from "./modules/review/review.router.js";
 import roleRouter from "./modules/role/role.router.js";
+import userRouter from "./modules/user/user.router.js";
 import morgan from "morgan";
 
 export const appRouter = (app, express) => {
@@ -65,6 +66,9 @@ export const appRouter = (app, express) => {
 
   // Role
   app.use("/role", roleRouter);
+
+  // User
+  app.use("/user", userRouter);
 
   // Category
   app.use("/category", categoryRouter);
